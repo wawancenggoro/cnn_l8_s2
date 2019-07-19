@@ -8,6 +8,13 @@ from torchvision import transforms
 import argparse
 from IPython import embed
 
+import gc
+import gdal
+from gdalconst import GA_ReadOnly
+from osgeo import osr
+
+import numpy as np
+
 parser = argparse.ArgumentParser(description='PyTorch Super Res Example')
 # hyper-parameters
 parser.add_argument('--batchSize', type=int, default=4, help='training batch size')
@@ -66,6 +73,30 @@ def main():
 
     model = torch.load('model_path.pth')
     model.eval()
+
+    input, target = next(iter(val_data_loader))
+    out = model(input.cuda())
+    denorm = DenormalizeS2(means, sds)
+    out_denorm = denorm(out)
+    patch = out_denorm[0].reshape(500,500) 
+
+    nx = patch.shape[0]
+    ny = patch.shape[1]
+
+    ds = gdal.Open('dataset/sentinel2/la2017/S2A_MSIL1C_20170404T184421_N0204_R027_T11SLU_20170404T184424/T11SLU_20170404T184421_B01.tif')
+    img = np.array(ds.GetRasterBand(1).ReadAsArray())
+    projection = ds.GetProjection()
+
+    geotransform = (300000.0+(60.0*975), 60.0, 0.0, 3900000.0-(60.0*0), 0.0, -60.0)
+
+    dst_ds = gdal.GetDriverByName('GTiff').Create('test.tif', ny, nx, 1, gdal.GDT_Int16)
+    dst_ds.SetGeoTransform(geotransform)    # specify coords
+    srs = osr.SpatialReference(wkt=ds.GetProjection())            # establish encoding
+    dst_ds.SetProjection(srs.ExportToWkt()) # export coords to file
+    dst_ds.GetRasterBand(1).WriteArray(patch)   # write band to the raster            
+    dst_ds.FlushCache()                     # write to disk
+    dst_ds = None                           # save, close  
+
     embed()
 
 if __name__ == '__main__':
