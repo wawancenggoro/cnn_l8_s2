@@ -122,36 +122,36 @@ def main():
     # out = model(data.unsqueeze(0).to(torch.device('cuda')))
 
     if args.model == 'sub':
-        model = SubPixelTrainer(args, train_data_loader, val_data_loader)
+        model = SubPixelTrainer(args, train_data_loader, test_data_loader, weights='/mnt/SSD/Projects/dikti2019PakSani/l8-s2-cnn/save/SubPixelCNN/model_path.pth')
     elif args.model == 'trans':
-        model = TransConvTrainer(args, train_data_loader, val_data_loader)
+        model = TransConvTrainer(args, train_data_loader, test_data_loader, weights='/mnt/SSD/Projects/dikti2019PakSani/l8-s2-cnn/save/TransConvCNN/model_path.pth')
 
     elif args.model == 'submax':
-        model = SubPixelMaxPoolTrainer(args, train_data_loader, val_data_loader)
+        model = SubPixelMaxPoolTrainer(args, train_data_loader, test_data_loader, weights='/mnt/SSD/Projects/dikti2019PakSani/l8-s2-cnn/save/SubPixelMaxPoolCNN/model_path.pth')
     elif args.model == 'transmax':
-        model = TransConvMaxPoolTrainer(args, train_data_loader, val_data_loader)
+        model = TransConvMaxPoolTrainer(args, train_data_loader, test_data_loader, weights='/mnt/SSD/Projects/dikti2019PakSani/l8-s2-cnn/save/TransConvMaxPoolCNN/model_path.pth')
 
     elif args.model == 'ups':
-        model = UpsampleTrainer(args, train_data_loader, val_data_loader)
+        model = UpsampleTrainer(args, train_data_loader, test_data_loader)
 
     elif args.model == 'srcnn':
-        model = SRCNNTrainer(args, train_data_loader, val_data_loader)
+        model = SRCNNTrainer(args, train_data_loader, test_data_loader)
     elif args.model == 'vdsr':
-        model = VDSRTrainer(args, train_data_loader, val_data_loader)
+        model = VDSRTrainer(args, train_data_loader, test_data_loader)
     elif args.model == 'edsr':
-        model = EDSRTrainer(args, train_data_loader, val_data_loader)
+        model = EDSRTrainer(args, train_data_loader, test_data_loader)
     elif args.model == 'fsrcnn':
-        model = FSRCNNTrainer(args, train_data_loader, val_data_loader)
+        model = FSRCNNTrainer(args, train_data_loader, test_data_loader)
     elif args.model == 'drcn':
-        model = DRCNTrainer(args, train_data_loader, val_data_loader)
+        model = DRCNTrainer(args, train_data_loader, test_data_loader)
     elif args.model == 'srgan':
-        model = SRGANTrainer(args, train_data_loader, val_data_loader)
+        model = SRGANTrainer(args, train_data_loader, test_data_loader)
     elif args.model == 'dbpn':
-        model = DBPNTrainer(args, train_data_loader, val_data_loader)
+        model = DBPNTrainer(args, train_data_loader, test_data_loader)
     else:
         raise Exception("the model does not exist")
 
-    model.run()
+    model.test()
 
 if __name__ == '__main__':
     main()

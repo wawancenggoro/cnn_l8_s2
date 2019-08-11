@@ -6,15 +6,15 @@ import csv
 import torch
 import torch.backends.cudnn as cudnn
 
-from SubPixelCNN.model import Net
+from TransConvCNN.model import Net
 from progress_bar import progress_bar
 import time
 from progress_bar import format_time
 
 
-class SubPixelTrainer(object):
+class TransConvTrainer(object):
     def __init__(self, config, training_loader, val_loader, weights=None):
-        super(SubPixelTrainer, self).__init__()
+        super(TransConvTrainer, self).__init__()
         self.CUDA = torch.cuda.is_available()
         self.device = torch.device('cuda' if self.CUDA else 'cpu')
         self.model = None
@@ -34,7 +34,7 @@ class SubPixelTrainer(object):
 
     def build_model(self):
         self.model = Net(upscale_factor=self.upscale_factor)
-
+        
         if self.weights is not None:
             self.model = torch.load(self.weights)
         elif len(self.gpus)>1:
@@ -53,7 +53,6 @@ class SubPixelTrainer(object):
 
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
         self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[50, 75, 100], gamma=0.5)  # lr decay
-
 
     def save(self):
         model_out_path = "model_path.pth"
@@ -231,7 +230,7 @@ class SubPixelTrainer(object):
             writer.writerow(avg_psnr)
 
         return avg_val_loss, avg_mse, avg_psnr
-
+        
     def run(self):
         self.build_model()
         best_val_loss = float('inf')
