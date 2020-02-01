@@ -39,9 +39,9 @@ parser.add_argument('--model', '-m', type=str, default='sub', help='choose which
 args = parser.parse_args()
 
 def main():
-    train_csv = "../dataset/l8s2-train.csv"
-    val_csv = "../dataset/l8s2-val.csv"
-    test_csv = "../dataset/l8s2-test.csv"
+    train_csv = "../dataset/l8s2-train-clean.csv"
+    val_csv = "../dataset/l8s2-val-clean.csv"
+    test_csv = "../dataset/l8s2-test-clean.csv"
 
     #====================================================================================================
     # Dataloader with open from directory
