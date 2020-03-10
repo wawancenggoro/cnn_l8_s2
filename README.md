@@ -1,6 +1,6 @@
 # Supervised Conversion from Landsat-8 Images to Sentinel-Images with Deep Learning
 
-This is the official code for the paper titled "Supervised Conversion from Landsat-8 Images to Sentinel-Images with Deep Learning."
+This is the official code for the paper titled **"Supervised Conversion from Landsat-8 Images to Sentinel-Images with Deep Learning."**
 
 The dataset can be downloaded here. Put the dataset in the directory named "dataset" at the same level as the code directory.
 
