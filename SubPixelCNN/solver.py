@@ -54,6 +54,7 @@ class SubPixelTrainer(object):
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
         self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[50, 75, 100], gamma=0.5)  # lr decay
 
+
     def save(self):
         model_out_path = "model_path.pth"
         torch.save(self.model, model_out_path)
@@ -70,9 +71,12 @@ class SubPixelTrainer(object):
             self.optimizer.zero_grad()
             out = self.model(data)
 
-            loss = self.criterion(out[0], target[0])
-            for i in range(self.num_targets-1):
-                loss += self.criterion(out[i+1], target[i+1]) 
+            # loss = self.criterion(out[0], target[0])
+            for i in range(self.num_targets):
+                if i==0:
+                    loss = self.criterion(out[i], target[i])
+                else:
+                    loss += self.criterion(out[i], target[i]) 
 
             train_loss += loss.item()
             loss.backward()
@@ -96,13 +100,15 @@ class SubPixelTrainer(object):
 
                 prediction = self.model(data)
 
-                mse = [self.criterion(prediction[i], target[i]) for i in range(self.num_targets)]
-                loss = mse[0]
-                for i in range(self.num_targets-1):
-                    loss += mse[i+1]
+                for i in range(self.num_targets):
+                    if i==0:
+                        loss = self.criterion(prediction[i], target[i])
+                    else:
+                        loss += self.criterion(prediction[i], target[i]) 
                 
                 val_loss += loss.item()
 
+                mse = [self.criterion(prediction[i], target[i]) for i in range(self.num_targets)]
                 avg_mse = [avg_mse[i] + mse[i].item() for i in range(self.num_targets)]
                 psnr = [10 * log10(1 / mse[i].item()) for i in range(self.num_targets)]
                 avg_psnr = [avg_psnr[i] + psnr[i] for i in range(self.num_targets)]
@@ -162,13 +168,15 @@ class SubPixelTrainer(object):
 
                 prediction = self.model(data)
 
-                mse = [self.criterion(prediction[i], target[i]) for i in range(self.num_targets)]
-                loss = mse[0]
-                for i in range(self.num_targets-1):
-                    loss += mse[i+1]
+                for i in range(self.num_targets):
+                    if i==0:
+                        loss = self.criterion(prediction[i], target[i])
+                    else:
+                        loss += self.criterion(prediction[i], target[i]) 
                 
                 val_loss += loss.item()
 
+                mse = [self.criterion(prediction[i], target[i]) for i in range(self.num_targets)]
                 avg_mse = [avg_mse[i] + mse[i].item() for i in range(self.num_targets)]
                 psnr = [10 * log10(1 / mse[i].item()) for i in range(self.num_targets)]
                 avg_psnr = [avg_psnr[i] + psnr[i] for i in range(self.num_targets)]

@@ -19,20 +19,6 @@ from math import log10
 
 import pickle
 
-parser = argparse.ArgumentParser(description='PyTorch Super Res Example')
-# hyper-parameters
-parser.add_argument('--batchSize', type=int, default=1, help='training batch size')
-parser.add_argument('--testBatchSize', type=int, default=1, help='testing batch size')
-parser.add_argument('--nEpochs', type=int, default=20, help='number of epochs to train for')
-parser.add_argument('--lr', type=float, default=0.001, help='Learning Rate. Default=0.01')
-parser.add_argument('--seed', type=int, default=123, help='random seed to use. Default=123')
-
-# model configuration
-parser.add_argument('--upscale_factor', '-uf',  type=int, default=4, help="super resolution upscale factor")
-parser.add_argument('--model', '-m', type=str, default='sub', help='choose which model is going to use')
-
-args = parser.parse_args()
-
 def nn_interpolate(A, new_size):
     """Vectorized Nearest Neighbor Interpolation"""
 
@@ -50,7 +36,8 @@ def nn_interpolate(A, new_size):
     return final_matrix
 
 def main():
-    test_csv = "../dataset/l8s2-test.csv"
+    test_csv = "../dataset/l8s2-test-clean.csv"
+    test_num_rows = 84
 
     #====================================================================================================
     # Dataloader with HDF5
@@ -78,54 +65,42 @@ def main():
     means = [0.1440263, 0.12583447, 0.12149246, 0.13250135, 0.14868644, 0.18663958, 0.20851527, 0.20700881, 0.22721754, 0.09312758, 0.00213068, 0.23704098, 0.1701286]
     sds = [0.03666846, 0.03787366, 0.05120519, 0.07712212, 0.07912124, 0.08743614, 0.0989072,  0.10019914, 0.10937765, 0.05528788, 0.0028293, 0.1379629, 0.10973044]
 
-    # modelname = 'SubPixelCNN'
-    # modelname = 'SubPixelMaxPoolCNN'
-    # modelname = 'TransConvCNN'
-    # modelname = 'TransConvMaxPoolCNN'
-    for modelname in ['SubPixelCNN', 'SubPixelMaxPoolCNN', 'TransConvCNN', 'TransConvMaxPoolCNN']:
+    for modelname in ['sub', 'submax', 'trans', 'transmax']:
         print(modelname)
-        model = torch.load('save/'+modelname+'/model_path.pth')
-
-        # model = torch.load('save/SubPixelCNN/model_path.pth')
-        # model = torch.load('save/SubPixelMaxPoolCNN/model_path.pth')
-        # model = torch.load('save/TransConvCNN/model_path.pth')
-        # model = torch.load('save/TransConvMaxPoolCNN/model_path.pth')
+        model = torch.load('save/'+'/'+modelname+'/model_path.pth')
 
         model.eval()
 
-        pred_min = np.zeros((90,13))
-        pred_max = np.zeros((90,13))
-        pred_mean = np.zeros((90,13))
-        pred_std = np.zeros((90,13))
+        pred_min = np.zeros((test_num_rows,13))
+        pred_max = np.zeros((test_num_rows,13))
+        pred_mean = np.zeros((test_num_rows,13))
+        pred_std = np.zeros((test_num_rows,13))
 
-        gt_min = np.zeros((90,13))
-        gt_max = np.zeros((90,13))
-        gt_mean = np.zeros((90,13))
-        gt_std = np.zeros((90,13))
+        gt_min = np.zeros((test_num_rows,13))
+        gt_max = np.zeros((test_num_rows,13))
+        gt_mean = np.zeros((test_num_rows,13))
+        gt_std = np.zeros((test_num_rows,13))
 
-        mae = np.zeros((90,13))
-        mse = np.zeros((90,13))
-        rmse = np.zeros((90,13))
-        psnr = np.zeros((90,13))
-        ssim = np.zeros((90,13))
-        cc = np.zeros((90,13))
-        sam = np.zeros((90,2880,2880))
-        ergas = np.zeros((90,))
-        ergas_no10 = np.zeros((90,))
+        mae = np.zeros((test_num_rows,13))
+        mse = np.zeros((test_num_rows,13))
+        rmse = np.zeros((test_num_rows,13))
+        psnr = np.zeros((test_num_rows,13))
+        ssim = np.zeros((test_num_rows,13))
+        cc = np.zeros((test_num_rows,13))
+        sam = np.zeros((test_num_rows,2880,2880))
+        ergas = np.zeros((test_num_rows,))
+        ergas_no10 = np.zeros((test_num_rows,))
 
         s2_path = 'sentinel2fim/la2017/S2A_MSIL1C_20171230T183751_N0206_R027_T11SLU_20171230T202151/T11SLU_20171230T183751'
 
         iter_loader = iter(test_data_loader)
-        import IPython; IPython.embed()
-        for i in range(90):
+        for i in range(test_num_rows):
         # for i in range(1):
             print(i)
             input, target = next(iter_loader)
-            # import pdb; pdb.set_trace()
             out = model(input.cuda())
 
             denorm = DenormalizeS2(means, sds)
-            # denorm = ConvertS2WithoutDenormalization()
 
             out_denorm = denorm(out)
             out_denorm[0] = out_denorm[0].reshape(480, 480) 
@@ -156,29 +131,6 @@ def main():
             target_denorm[2] = target_denorm[2].reshape(2880, 2880) 
             target_denorm[3] = target_denorm[3].reshape(2880, 2880) 
             target_denorm[7] = target_denorm[7].reshape(2880, 2880) 
-
-            geotransform = (300000.0+(20.0*0), 20.0, 0.0, 3900000.0-(20.0*0), 0.0, -20.0)
-            ds = gdal.Open('/mnt/Storage2/Projects/dikti2019PakSani/dataset/'+s2_path+'_B05.tif')
-            img = np.array(ds.GetRasterBand(1).ReadAsArray())
-            projection = ds.GetProjection()
-
-            dst_ds = gdal.GetDriverByName('GTiff').Create('gt.tif', 1440, 1440, 1, gdal.GDT_Float64)
-            dst_ds.SetGeoTransform(geotransform)    # specify coords
-            srs = osr.SpatialReference(wkt=ds.GetProjection())            # establish encoding
-            dst_ds.SetProjection(srs.ExportToWkt()) # export coords to file
-            dst_ds.GetRasterBand(1).WriteArray(target_denorm[4])   # write band to the raster            
-            dst_ds.FlushCache()                     # write to disk
-            dst_ds = None                           # save, close  
-
-            dst_ds = gdal.GetDriverByName('GTiff').Create('pred.tif', 1440, 1440, 1, gdal.GDT_Float64)
-            dst_ds.SetGeoTransform(geotransform)    # specify coords
-            srs = osr.SpatialReference(wkt=ds.GetProjection())            # establish encoding
-            dst_ds.SetProjection(srs.ExportToWkt()) # export coords to file
-            dst_ds.GetRasterBand(1).WriteArray(out_denorm[4])   # write band to the raster            
-            dst_ds.FlushCache()                     # write to disk
-            dst_ds = None                           # save, close  
-
-            # import IPython; IPython.embed()
 
             pred_vecs = np.zeros((13,2880,2880))
             gt_vecs = np.zeros((13,2880,2880))
@@ -228,25 +180,6 @@ def main():
                 var_gt = (gt-gt_mean[i,j])
                 cc[i,j] = np.multiply(var_pred, var_gt).sum() / np.sqrt((var_pred**2).sum() * (var_gt**2).sum())
 
-                ergas_inroot += np.square(rmse[i,j]/gt_mean[i,j])
-                if j!=10:
-                    ergas_inroot_no10 += np.square(rmse[i,j]/gt_mean[i,j])
-                # print(i)
-                # print(np.square(rmse[i,j]/gt_mean[i,j]))
-                # import IPython; IPython.embed()
-
-            # import IPython; IPython.embed()
-
-            # In ergas, ratio = h/l, where h and l is the pixel size of gt and pred. 
-            # Because the gt and pred in this case has the same resolution, then the ratio = 1
-            # Thus, the actual code is:
-            # ================================================================================
-            # ratio = 1
-            # ergas[i] = 100*ratio*np.sqrt(ergas_inroot/13)
-            # ================================================================================
-            # But, for efficient computation, we omit the ratio.
-            ergas[i] = 100*np.sqrt(ergas_inroot/13)
-            ergas_no10[i] = 100*np.sqrt(ergas_inroot_no10/12)
 
             new_size = (2880, 2880)
             old_size = out_denorm[0].shape
@@ -281,34 +214,21 @@ def main():
             gt_vecs[11] = target_denorm[11][:, row_idx][col_idx, :]
             gt_vecs[12] = target_denorm[12][:, row_idx][col_idx, :]
 
-            sam[i] = np.arccos((pred_vecs * gt_vecs).sum(axis=0)/(np.sqrt(np.square(pred_vecs).sum(axis=0))*np.sqrt(np.square(gt_vecs).sum(axis=0))))
-
-            # import IPython; IPython.embed()
-
             del out
 
-        np.savetxt("test_results/"+modelname+"/pred_min.csv", pred_min, delimiter=",")
-        np.savetxt("test_results/"+modelname+"/pred_max.csv", pred_max, delimiter=",")
-        np.savetxt("test_results/"+modelname+"/pred_mean.csv", pred_mean, delimiter=",")
-        np.savetxt("test_results/"+modelname+"/pred_std.csv", pred_std, delimiter=",")
-
-        np.savetxt("test_results/"+modelname+"/gt_min.csv", gt_min, delimiter=",")
-        np.savetxt("test_results/"+modelname+"/gt_max.csv", gt_max, delimiter=",")
-        np.savetxt("test_results/"+modelname+"/gt_mean.csv", gt_mean, delimiter=",")
-        np.savetxt("test_results/"+modelname+"/gt_std.csv", gt_std, delimiter=",")
-
-        np.savetxt("test_results/"+modelname+"/mae.csv", mae, delimiter=",")
-        np.savetxt("test_results/"+modelname+"/rmse.csv", rmse, delimiter=",")
-        np.savetxt("test_results/"+modelname+"/psnr.csv", psnr, delimiter=",")
-        np.savetxt("test_results/"+modelname+"/ssim.csv", ssim, delimiter=",")
-        np.savetxt("test_results/"+modelname+"/cc.csv", cc, delimiter=",")
-        np.savetxt("test_results/"+modelname+"/ergas.csv", ergas, delimiter=",")
-        np.savetxt("test_results/"+modelname+"/ergas_no10.csv", ergas_no10, delimiter=",")
-        np.savetxt("test_results/"+modelname+"/sam.csv", np.mean(sam, axis=(1,2)), delimiter=",")
-
-        with open("test_results/"+modelname+"/sam.pkl", 'wb') as f:
-            pickle.dump(sam, f, protocol=4)
-
+        np.savetxt("save/"+datestr+'/'+modelname+"/pred_min.csv", pred_min, delimiter=",")
+        np.savetxt("save/"+datestr+'/'+modelname+"/pred_max.csv", pred_max, delimiter=",")
+        np.savetxt("save/"+datestr+'/'+modelname+"/pred_mean.csv", pred_mean, delimiter=",")
+        np.savetxt("save/"+datestr+'/'+modelname+"/pred_std.csv", pred_std, delimiter=",")
+        np.savetxt("save/"+datestr+'/'+modelname+"/gt_min.csv", gt_min, delimiter=",")
+        np.savetxt("save/"+datestr+'/'+modelname+"/gt_max.csv", gt_max, delimiter=",")
+        np.savetxt("save/"+datestr+'/'+modelname+"/gt_mean.csv", gt_mean, delimiter=",")
+        np.savetxt("save/"+datestr+'/'+modelname+"/gt_std.csv", gt_std, delimiter=",")
+        np.savetxt("save/"+datestr+'/'+modelname+"/metric_mae.csv", mae, delimiter=",")
+        np.savetxt("save/"+datestr+'/'+modelname+"/metric_rmse.csv", rmse, delimiter=",")
+        np.savetxt("save/"+datestr+'/'+modelname+"/metric_psnr.csv", psnr, delimiter=",")
+        np.savetxt("save/"+datestr+'/'+modelname+"/metric_ssim.csv", ssim, delimiter=",")
+        np.savetxt("save/"+datestr+'/'+modelname+"/metric_cc.csv", cc, delimiter=",")
 
 if __name__ == '__main__':
     main()

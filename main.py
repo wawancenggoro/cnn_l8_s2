@@ -39,52 +39,9 @@ parser.add_argument('--model', '-m', type=str, default='sub', help='choose which
 args = parser.parse_args()
 
 def main():
-    train_csv = "../dataset/l8s2-train-clean.csv"
-    val_csv = "../dataset/l8s2-val-clean.csv"
-    test_csv = "../dataset/l8s2-test-clean.csv"
-
-    #====================================================================================================
-    # Dataloader with open from directory
-    #====================================================================================================
-    # train_csv = "../dataset/l8s2-train.csv"
-    # val_csv = "../dataset/l8s2-val.csv"
-    # test_csv = "../dataset/l8s2-test.csv"
-
-    # input_transform = transforms.Compose([
-    #                         transforms.ToTensor(),
-    #                         NormalizeL8(
-    #                                 (489.7118, 591.63416, 826.2221, 948.7332, 1858.4872, 1864.6527, 1355.4669), 
-    #                                 (338.75378, 403.48727, 572.8161, 784.2508, 1208.3722, 1436.1204, 1138.7588)
-    #                         )
-    #                     ])
-
-    # target_transform = transforms.Compose([
-    #                         transforms.Lambda(lambda x: [x[i].astype('float32') for i in range(13)]),
-    #                         transforms.Lambda(lambda x: [transforms.ToTensor()(x[i]) for i in range(13)]),
-    #                         NormalizeS2(
-    #                                 (1440.2627, 1258.3445, 1214.9252, 1325.0135, 1486.8649, 1866.3961, 2085.1528, 2070.0884, 2272.1758, 931.276, 21.306807, 2370.4104, 1701.286), 
-    #                                 (366.68463, 378.73654, 512.0519, 771.2212, 791.2124, 874.36127, 989.072, 1001.9915, 1093.7765, 552.87885, 28.292986, 1379.6288, 1097.3044)
-    #                         )
-    #                     ])
-
-    # train_set = Landsat8Dataset(train_csv,
-    #     input_transform = input_transform,
-    #     target_transform=target_transform)
-    # train_data_loader = DataLoader(dataset=train_set, batch_size=args.batchSize, shuffle=True)
-
-    # val_set = Landsat8Dataset(val_csv,
-    #     input_transform = input_transform,
-    #     target_transform=target_transform)
-    # val_data_loader = DataLoader(dataset=val_set, batch_size=args.testBatchSize, shuffle=False)
-
-    # test_set = Landsat8Dataset(test_csv,
-    #     input_transform = input_transform,
-    #     target_transform=target_transform)
-    # test_data_loader = DataLoader(dataset=test_set, batch_size=args.testBatchSize, shuffle=False)
-    #====================================================================================================
-
-
-
+    train_csv = "../dataset/l8s2-train.csv"
+    val_csv = "../dataset/l8s2-val.csv"
+    test_csv = "../dataset/l8s2-test.csv"
 
     #====================================================================================================
     # Dataloader with HDF5
@@ -115,12 +72,6 @@ def main():
     test_data_loader = DataLoader(dataset=test_set, batch_size=args.testBatchSize, shuffle=False)
     #====================================================================================================
 
-    # from SRCNN.model import Net
-    # model = Net(num_channels=7, base_filter=64).to(torch.device('cuda'))
-    
-    # data,target=train_set.__getitem__(0)
-    # out = model(data.unsqueeze(0).to(torch.device('cuda')))
-
     if args.model == 'sub':
         model = SubPixelTrainer(args, train_data_loader, val_data_loader)
     elif args.model == 'trans':
@@ -131,23 +82,6 @@ def main():
     elif args.model == 'transmax':
         model = TransConvMaxPoolTrainer(args, train_data_loader, val_data_loader)
 
-    elif args.model == 'ups':
-        model = UpsampleTrainer(args, train_data_loader, val_data_loader)
-
-    elif args.model == 'srcnn':
-        model = SRCNNTrainer(args, train_data_loader, val_data_loader)
-    elif args.model == 'vdsr':
-        model = VDSRTrainer(args, train_data_loader, val_data_loader)
-    elif args.model == 'edsr':
-        model = EDSRTrainer(args, train_data_loader, val_data_loader)
-    elif args.model == 'fsrcnn':
-        model = FSRCNNTrainer(args, train_data_loader, val_data_loader)
-    elif args.model == 'drcn':
-        model = DRCNTrainer(args, train_data_loader, val_data_loader)
-    elif args.model == 'srgan':
-        model = SRGANTrainer(args, train_data_loader, val_data_loader)
-    elif args.model == 'dbpn':
-        model = DBPNTrainer(args, train_data_loader, val_data_loader)
     else:
         raise Exception("the model does not exist")
 
