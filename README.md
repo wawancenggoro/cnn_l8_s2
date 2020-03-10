@@ -2,7 +2,7 @@
 
 This is the official code for the paper titled **"Supervised Conversion from Landsat-8 Images to Sentinel-Images with Deep Learning."**
 
-The dataset can be downloaded [here (http://bdsrc.binus.ac.id/wawan/l8s2/dataset/)] . Put the dataset in the directory named "dataset" at the same level as the code directory.
+The dataset can be downloaded [here](http://bdsrc.binus.ac.id/wawan/l8s2/dataset/) . Put the dataset in the directory named "dataset" at the same level as the code directory.
 
 To train a model, run this command:
 
@@ -18,4 +18,4 @@ To calculate the performance of each model, put the model_path.pth file generate
 python calculate_performance.py
 ```
 
-Samples of predicted images and the corresponding ground truth can be downloaded [here (http://bdsrc.binus.ac.id/wawan/l8s2/sample-tifs/)]
+Samples of predicted images and the corresponding ground truth can be downloaded [here](http://bdsrc.binus.ac.id/wawan/l8s2/sample-tifs/)
